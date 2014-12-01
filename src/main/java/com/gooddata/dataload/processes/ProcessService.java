@@ -1,17 +1,13 @@
 package com.gooddata.dataload.processes;
 
-import static com.gooddata.util.Validate.notEmpty;
-import static com.gooddata.util.Validate.notNull;
-import static java.util.Collections.emptyList;
-
-import com.gooddata.AbstractService;
 import com.gooddata.AbstractPollHandler;
+import com.gooddata.AbstractService;
 import com.gooddata.FutureResult;
 import com.gooddata.GoodDataException;
 import com.gooddata.GoodDataRestException;
-import com.gooddata.util.ZipUtils;
 import com.gooddata.account.AccountService;
 import com.gooddata.project.Project;
+import com.gooddata.util.ZipUtils;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -30,6 +26,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.Collection;
+
+import static com.gooddata.util.Validate.notEmpty;
+import static com.gooddata.util.Validate.notNull;
+import static java.util.Collections.emptyList;
 
 /**
  * Service to manage dataload processes and process executions.
@@ -231,7 +231,9 @@ public class ProcessService extends AbstractService {
     private Collection<DataloadProcess> listProcesses(URI uri) {
         try {
             final DataloadProcesses processes = restTemplate.getForObject(uri, DataloadProcesses.class);
-            if (processes == null || processes.getItems() == null) {
+            if (processes == null) {
+                throw new GoodDataException("empty response from API call");
+            } else if (processes.getItems() == null) {
                 return emptyList();
             }
             return processes.getItems();
