@@ -6,8 +6,6 @@ package com.gooddata;
 import com.gooddata.account.AccountService;
 import com.gooddata.connector.ConnectorService;
 import com.gooddata.dataload.processes.ProcessService;
-import com.gooddata.util.ResponseErrorHandler;
-import com.gooddata.warehouse.WarehouseService;
 import com.gooddata.dataset.DatasetService;
 import com.gooddata.gdc.DataStoreService;
 import com.gooddata.gdc.GdcService;
@@ -18,6 +16,8 @@ import com.gooddata.md.MetadataService;
 import com.gooddata.model.ModelService;
 import com.gooddata.project.ProjectService;
 import com.gooddata.report.ReportService;
+import com.gooddata.util.ResponseErrorHandler;
+import com.gooddata.warehouse.WarehouseService;
 import org.apache.http.HttpHost;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -25,9 +25,11 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.VersionInfo;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.DefaultUriTemplateHandler;
 
 import java.util.Arrays;
 
@@ -184,13 +186,20 @@ public class GoodData {
 
     private RestTemplate createRestTemplate(String hostname, HttpClient httpClient, int port, String protocol) {
 
-        final UriPrefixingClientHttpRequestFactory factory = new UriPrefixingClientHttpRequestFactory(
-                new HttpComponentsClientHttpRequestFactory(httpClient), hostname, port, protocol);
+        /*final UriPrefixingClientHttpRequestFactory factory = new UriPrefixingClientHttpRequestFactory(
+                new HttpComponentsClientHttpRequestFactory(httpClient), hostname, port, protocol);*/
+        final ClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
         final RestTemplate restTemplate = new RestTemplate(factory);
         restTemplate.setInterceptors(Arrays.<ClientHttpRequestInterceptor>asList(
                 new HeaderSettingRequestInterceptor(singletonMap("Accept", getAcceptHeaderValue()))));
 
         restTemplate.setErrorHandler(new ResponseErrorHandler(restTemplate.getMessageConverters()));
+
+        final DefaultUriTemplateHandler uriTemplateHandler = new DefaultUriTemplateHandler();
+        uriTemplateHandler.setBaseUrl(protocol + "://" + hostname + ":" + port);
+        uriTemplateHandler.setParsePath(true);
+
+        restTemplate.setUriTemplateHandler(uriTemplateHandler);
 
         return restTemplate;
     }
