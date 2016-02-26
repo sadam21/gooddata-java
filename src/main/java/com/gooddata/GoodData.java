@@ -197,7 +197,7 @@ public class GoodData {
 
         final DefaultUriTemplateHandler uriTemplateHandler = new DefaultUriTemplateHandler();
         uriTemplateHandler.setBaseUrl(protocol + "://" + hostname + ":" + port);
-        uriTemplateHandler.setParsePath(true);
+        uriTemplateHandler.setParsePath(false);
 
         restTemplate.setUriTemplateHandler(uriTemplateHandler);
 

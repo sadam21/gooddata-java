@@ -16,13 +16,10 @@ public class ReportApp {
         final MetadataService md = gd.getMetadataService();
 
         final Report report = md.getObjByUri("/gdc/md/b27pwwvlz5fnvdpiy4w3q257t1yvbw18/obj/42447", Report.class);
-        //final ReportDefinition definition = md.getObjByUri("/gdc/md/b27pwwvlz5fnvdpiy4w3q257t1yvbw18/obj/46741", ReportDefinition.class);
 
         System.out.println("Report def:");
-//        gd.getReportService().exportReportRawCsv(definition, System.out);
-//        gd.getReportService().exportReport(definition, ReportExportFormat.RAW_CSV, System.out).get();
 
         System.out.println("Report:");
-        gd.getReportService().exportReportRawCsv(report, System.out);
+        gd.getReportService().exportReportRawCsvHost(report, System.out);
     }
 }
