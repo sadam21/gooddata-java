@@ -18,7 +18,6 @@ import com.gooddata.lcm.LcmService;
 import com.gooddata.md.maintenance.ExportImportService;
 import com.gooddata.notification.NotificationService;
 import com.gooddata.projecttemplate.ProjectTemplateService;
-import com.gooddata.util.ResponseErrorHandler;
 import com.gooddata.authentication.LoginPasswordAuthentication;
 import com.gooddata.warehouse.WarehouseService;
 import com.gooddata.dataset.DatasetService;
@@ -36,19 +35,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.VersionInfo;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.gooddata.util.Validate.notNull;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.apache.http.util.VersionInfo.loadVersionInfo;
 
 /**
@@ -216,7 +204,7 @@ public class GoodData {
     protected GoodData(GoodDataEndpoint endpoint, Authentication authentication, GoodDataSettings settings) {
         httpClient = authentication.createHttpClient(endpoint, createHttpClientBuilder(settings));
 
-        restTemplate = createRestTemplate(endpoint, httpClient);
+        restTemplate = createRestTemplateFactory().create(endpoint, httpClient);
 
         accountService = new AccountService(getRestTemplate(), settings);
         projectService = new ProjectService(getRestTemplate(), accountService, settings);
@@ -240,27 +228,8 @@ public class GoodData {
         lcmService = new LcmService(getRestTemplate(), settings);
     }
 
-    static RestTemplate createRestTemplate(GoodDataEndpoint endpoint, HttpClient httpClient) {
-        notNull(endpoint, "endpoint");
-        notNull(httpClient, "httpClient");
-
-        final UriPrefixingClientHttpRequestFactory factory = new UriPrefixingClientHttpRequestFactory(
-                new HttpComponentsClientHttpRequestFactory(httpClient),
-                endpoint.toUri()
-        );
-
-        final Map<String, String> presetHeaders = new HashMap<>(2);
-        presetHeaders.put("Accept", MediaType.APPLICATION_JSON_VALUE);
-        presetHeaders.put(Header.GDC_VERSION, readApiVersion());
-
-        final RestTemplate restTemplate = new RestTemplate(factory);
-        restTemplate.setInterceptors(asList(
-                new HeaderSettingRequestInterceptor(presetHeaders),
-                new DeprecationWarningRequestInterceptor()));
-
-        restTemplate.setErrorHandler(new ResponseErrorHandler(restTemplate.getMessageConverters()));
-
-        return restTemplate;
+    protected GoodDataRestTemplateFactory createRestTemplateFactory() {
+        return new GoodDataRestTemplateFactory();
     }
 
     private HttpClientBuilder createHttpClientBuilder(final GoodDataSettings settings) {
@@ -294,14 +263,6 @@ public class GoodData {
         return String.format("%s/%s (%s; %s) %s/%s", "GoodData-Java-SDK", clientVersion,
                 System.getProperty("os.name"), System.getProperty("java.specification.version"),
                 "Apache-HttpClient", apacheVersion);
-    }
-
-    private static String readApiVersion() {
-        try {
-            return StreamUtils.copyToString(GoodData.class.getResourceAsStream("/GoodDataApiVersion"), Charset.defaultCharset());
-        } catch (IOException e) {
-            throw new IllegalStateException("Cannot read GoodDataApiVersion from classpath", e);
-        }
     }
 
     /**
